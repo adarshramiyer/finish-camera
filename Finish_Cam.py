@@ -1,12 +1,14 @@
 from threading import Thread
 import time
 import cv2
-import numpy as np
 
 # Setting up camera and resolution
+slice_height = int(input("Enter image height: "))
+slice_width = int(input("Enter image width: "))
+
 cap = cv2.VideoCapture(0)
-cap.set(3, 320)
-cap.set(4, 240)
+cap.set(3, slice_width)
+cap.set(4, slice_height)
 cap.set(cv2.CAP_PROP_FPS, 60)
 
 frame_stream = []  # stores tuple of (unprocessed frame, timestamp)
@@ -15,8 +17,7 @@ frame_stream = []  # stores tuple of (unprocessed frame, timestamp)
 ret, temp_image = cap.read()
 while not ret:
     ret, temp_image = cap.read()
-slice_height = temp_image.shape[0]
-slice_width = temp_image.shape[1]
+
 composite_image = temp_image[0:slice_height, 0:1]
 cv2.imshow('Waiting to start', composite_image)
 
@@ -33,13 +34,13 @@ def stretch_image(image, x_factor, img_h, img_w):
 
 
 def process_time(number_time):
-    if (number_time < 60.0):
+    if number_time < 60.0:
         seconds = str(round(number_time, 1))
         return seconds
     else:
         num_minutes = int(number_time / 60)
         seconds = round((number_time - (num_minutes * 60)), 1)
-        if (seconds < 10):
+        if seconds < 10:
             combined_time = str(num_minutes) + ":0" + str(seconds)
         else:
             combined_time = str(num_minutes) + ":" + str(seconds)
@@ -50,8 +51,8 @@ def capture_image():
     num_frame = 0
     while True:
 
-        ret, frame = cap.read()  # Capturing image
-        if ret:  # If a frame has been captured
+        captured, frame = cap.read()  # Capturing image
+        if captured:  # If a frame has been captured
 
             temp_time = time.time() - start_time  # Capturing timestamp
             frame_stream.append((frame, temp_time))  # Adding data to frame stream
@@ -81,14 +82,11 @@ def process_stream():
 
             # TIME LABELS
             frame_time = frame_stream[0][1]  # Taking timestamp of first capture
-            if (frame_time >= (prev_time + 0.5)):  # If the timestamp warrants a label on the image
+            if frame_time >= (prev_time + 0.5):  # If the timestamp warrants a label on the image
                 str_time = "|" + process_time(frame_time)  # Format the time
                 composite_image = cv2.putText(composite_image, str_time, (0, (slice_height - 3)), 1, 1, (0, 0, 255),
                                               1)  # Add text
                 prev_time += 0.5  # Increment the requisite time
-
-            # for i in range(len(frame_stream)):
-            # print(frame_stream[i][1])
 
             print(frame_stream[0][1])
             frame_stream.pop(0)  # Removing processed frame
